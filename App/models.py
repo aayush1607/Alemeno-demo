@@ -3,9 +3,13 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.utils.translation import ugettext as _
-from django.core.files import File
+
 from urllib.request import urlopen
-from tempfile import NamedTemporaryFile
+from django.core.files import File
+from django.core.files.temp import NamedTemporaryFile
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+
 from datetime import datetime
 import pytz
 IST = pytz.timezone('Asia/Kolkata')
@@ -34,21 +38,31 @@ class Image(models.Model):
         ('6', 'Unknow'),)
 
     kid = models.ForeignKey(to=Kid, on_delete=models.CASCADE)   # FK
-    image = models.ImageField(upload_to='images',default=None,blank=True)
-    image_url = models.URLField()
+    image = models.ImageField(upload_to='images', null= True, blank=True)
+    image_url = models.URLField(blank=True, null=True)
     created_on = models.DateTimeField(_("Created on"), default=datetime.now(IST))
     updated_on = models.DateTimeField(_("Updated on"), default=datetime.now(IST))
     is_approved = models.BooleanField(_("is_approved"),default=False)
     approved_by = models.ForeignKey(User,null=True,default=None,on_delete=models.SET_DEFAULT)
     food_group = models.CharField(choices=GROUP_CHOICES, max_length=128)
 
-
     def save(self, *args, **kwargs):
         if self.image_url and not self.image:
-            img_temp = NamedTemporaryFile(delete=True)
-            img_temp.write(urlopen(self.image_url).read())
-            img_temp.flush()
-            self.image.save(f"image_{self.pk}", File(img_temp))
+            img_temp = NamedTemporaryFile()
+            with urlopen(self.image_url) as uo:
+                assert uo.status == 200
+                img_temp.write(uo.read())
+                img_temp.flush()
+            img = File(img_temp)
+            self.image.save(f"image_{self.pk}"+".jpg", img)
+        if self.pk:
+
+            kid = Kid.objects.get(id=self.kid.id)
+            msg='This is to notify for your kid '+str(kid.name)+' that image uploaded by him does not contain a food item'
+            email = EmailMultiAlternatives('Alert for unknown food item', msg)
+            email.attach_alternative(msg, "text/html")
+            email.to = [kid.parent_email]
+            email.send()
         super(Image, self).save(*args, **kwargs)
 
 class ImageAdmin(admin.ModelAdmin):
