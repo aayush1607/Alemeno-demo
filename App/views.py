@@ -5,4 +5,4 @@ from django.http import HttpResponse
 
 
 def index(request):
-    return HttpResponse("Hello, check demo at admin site")
+    return HttpResponse("Hello, check demo at admin site. Login Credentials are, Username: aayush Password: 1234")
