@@ -22,7 +22,9 @@ class Kid(models.Model):
     parent_email = models.EmailField(_("Parent Email"), max_length = 250)
     phone_regex = RegexValidator(regex=r'^\+?1?\d{10,15}$', message="Phone number must be entered in the format: '+911234567890'. Up to 10 digits allowed.")
     phone_number = models.CharField(_("Parent Phone Number"), validators=[phone_regex], max_length=17)
-    
+    def __str__(self):
+        return self.name 
+        
 class KidAdmin(admin.ModelAdmin):
     list_display = ('name', 'age', 'parent_email','phone_number')
     search_fields = ("name__istartswith","parent_email__istartswith", "phone_number__istartswith" )
@@ -39,7 +41,7 @@ class Image(models.Model):
         ('6', 'Unknow'),)
 
     kid = models.ForeignKey(to=Kid, on_delete=models.CASCADE)   # FK
-    image = models.ImageField(upload_to='media/images', null= True, blank=True)
+    image = models.ImageField(upload_to='images', null= True, blank=True)
     image_url = models.URLField(blank=True, null=True)
     created_on = models.DateTimeField(_("Created on"), default=datetime.now(IST))
     updated_on = models.DateTimeField(_("Updated on"), default=datetime.now(IST))
@@ -48,7 +50,7 @@ class Image(models.Model):
     food_group = models.CharField(choices=GROUP_CHOICES, max_length=128)
     
     def image_tag(self):
-        return mark_safe('<img src="/%s" width="150" height="150" />' % (self.image))
+        return mark_safe('<img src="%s" width="150" height="150" />' % (self.image_url))
 
     image_tag.short_description = 'Image'
 
@@ -60,7 +62,13 @@ class Image(models.Model):
                 img_temp.write(uo.read())
                 img_temp.flush()
             img = File(img_temp)
-            self.image.save(f"image_{self.kid.name}"+".jpg", img)
+            try:
+                obj = Image.objects.latest('id')
+                id=obj.id
+            except:
+                id=0
+            self.image.save(f"image_{id+1}"+".jpg", img)
+
         if self.pk and self.food_group=="6":
 
             kid = Kid.objects.get(id=self.kid.id)
@@ -69,6 +77,7 @@ class Image(models.Model):
             email.attach_alternative(msg, "text/html")
             email.to = [kid.parent_email]
             email.send()
+
         super(Image, self).save(*args, **kwargs)
 
 class ImageAdmin(admin.ModelAdmin):
