@@ -61,10 +61,10 @@ class Image(models.Model):
                 img_temp.flush()
             img = File(img_temp)
             self.image.save(f"image_{self.kid.name}"+".jpg", img)
-        if self.pk:
+        if self.pk and self.food_group=="6":
 
             kid = Kid.objects.get(id=self.kid.id)
-            msg='This is to notify for your kid '+str(kid.name)+' that image uploaded by him does not contain a food item'
+            msg='This is to notify for your kid '+str(kid.name)+' that image uploaded by him/her does not contain a food item'
             email = EmailMultiAlternatives('Alert for unknown food item', msg)
             email.attach_alternative(msg, "text/html")
             email.to = [kid.parent_email]
