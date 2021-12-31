@@ -56,7 +56,7 @@ ROOT_URLCONF = 'Alemeno.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -145,7 +145,7 @@ STATICFILES_DIRS = (
 )
 
 #  Add configuration for static files storage using whitenoise
-STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 import dj_database_url 
 prod_db  =  dj_database_url.config(conn_max_age=500)
