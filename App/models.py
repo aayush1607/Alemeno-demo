@@ -8,7 +8,8 @@ from urllib.request import urlopen
 from django.core.files import File
 from django.core.files.temp import NamedTemporaryFile
 from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
+from django.utils.html import mark_safe
+
 
 from datetime import datetime
 import pytz
@@ -38,13 +39,18 @@ class Image(models.Model):
         ('6', 'Unknow'),)
 
     kid = models.ForeignKey(to=Kid, on_delete=models.CASCADE)   # FK
-    image = models.ImageField(upload_to='images', null= True, blank=True)
+    image = models.ImageField(upload_to='media/images', null= True, blank=True)
     image_url = models.URLField(blank=True, null=True)
     created_on = models.DateTimeField(_("Created on"), default=datetime.now(IST))
     updated_on = models.DateTimeField(_("Updated on"), default=datetime.now(IST))
     is_approved = models.BooleanField(_("is_approved"),default=False)
     approved_by = models.ForeignKey(User,null=True,default=None,on_delete=models.SET_DEFAULT)
     food_group = models.CharField(choices=GROUP_CHOICES, max_length=128)
+    
+    def image_tag(self):
+        return mark_safe('<img src="/%s" width="150" height="150" />' % (self.image))
+
+    image_tag.short_description = 'Image'
 
     def save(self, *args, **kwargs):
         if self.image_url and not self.image:
@@ -54,7 +60,7 @@ class Image(models.Model):
                 img_temp.write(uo.read())
                 img_temp.flush()
             img = File(img_temp)
-            self.image.save(f"image_{self.pk}"+".jpg", img)
+            self.image.save(f"image_{self.kid.name}"+".jpg", img)
         if self.pk:
 
             kid = Kid.objects.get(id=self.kid.id)
@@ -66,6 +72,7 @@ class Image(models.Model):
         super(Image, self).save(*args, **kwargs)
 
 class ImageAdmin(admin.ModelAdmin):
-    list_display = ('image_url', 'created_on', 'updated_on','is_approved','approved_by','food_group')
+    list_display = ('image_url',  'image_tag', 'created_on', 'updated_on','is_approved','approved_by','food_group')
     search_fields = ("food_group__istartswith","approved_by__istartswith" )
     radio_fields = {"food_group": admin.VERTICAL}
+    readonly_fields=('image_tag', 'image' )
