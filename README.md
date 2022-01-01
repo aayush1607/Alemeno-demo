@@ -5,7 +5,7 @@
 
 <span align="center">
 
-#### The task given by Alemeno completed to develop APIs for a basic version of Instagram.<br/>
+#### The task given by Alemeno.<br/>
  Create Kid Table.<br/>
  Create Image Table.<br/>
  Create a django admin page to add kids and corresponding images.<br/>
